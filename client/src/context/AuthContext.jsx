@@ -1,32 +1,44 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 
 const AuthContext = createContext(null);
 const STORAGE_KEY = 'qr_admin_auth';
 
-export function AuthProvider({ children }) {
-  const [state, setState] = useState(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : { token: null, admin: null };
-    } catch {
-      return { token: null, admin: null };
-    }
-  });
+function readStored() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { token: null, admin: null };
+  } catch {
+    return { token: null, admin: null };
+  }
+}
 
-  useEffect(() => {
+function writeStored(state) {
+  try {
     if (state?.token) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     else localStorage.removeItem(STORAGE_KEY);
-  }, [state]);
+  } catch {
+    // ignore — localStorage may be unavailable
+  }
+}
+
+export function AuthProvider({ children }) {
+  const [state, setState] = useState(readStored);
 
   const value = useMemo(
     () => ({
       token: state.token,
       admin: state.admin,
       login(token, admin) {
-        setState({ token, admin });
+        const next = { token, admin };
+        // Persist synchronously so API calls fired during the same render
+        // (e.g., AdminDashboard's initial fetch after navigate) see the token.
+        writeStored(next);
+        setState(next);
       },
       logout() {
-        setState({ token: null, admin: null });
+        const next = { token: null, admin: null };
+        writeStored(next);
+        setState(next);
       },
     }),
     [state]
