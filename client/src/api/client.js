@@ -35,6 +35,7 @@ export const api = {
 
   // tables (public)
   getTableByCode: (code) => request(`/tables/by-code/${encodeURIComponent(code)}`),
+  getSampleTable: () => request('/tables/sample'),
 
   // orders (public)
   placeOrder: (payload) => request('/orders', { method: 'POST', body: payload }),

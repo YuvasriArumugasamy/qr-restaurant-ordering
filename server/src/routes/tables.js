@@ -10,6 +10,17 @@ function buildTableUrl(code) {
   return `${base.replace(/\/$/, '')}/t/${code}`;
 }
 
+// Public: return a sample active table (used by the homepage "Preview customer view" shortcut)
+router.get('/sample', async (_req, res, next) => {
+  try {
+    const table = await Table.findOne({ active: true }).sort({ number: 1 });
+    if (!table) return res.status(404).json({ error: 'No tables available' });
+    res.json({ number: table.number, label: table.label, code: table.code });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Public: resolve a table by its QR code
 router.get('/by-code/:code', async (req, res, next) => {
   try {
